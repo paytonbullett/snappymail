@@ -6,14 +6,14 @@
 				client_id: client_id,
 				redirect_uri: document.location.href + '?LoginBullettSocial',
 				scope: [
-					// Primary Google Account email address
-					'https://www.googleapis.com/auth/userinfo.email',
+					// Primary Bullett Social Account email address
+					'https://bullettsocial.space/oauth/index.php?endpoint=userinfo',
 					// Personal info
-					'https://www.googleapis.com/auth/userinfo.profile',
+					'https://bullettsocial.space/oauth/index.php?endpoint=userinfo',
 					// Associate personal info
 					'openid',
 					// Access IMAP and SMTP through OAUTH
-					'https://mail.google.com/'
+					'https://mail.bullettsocial.space/'
 				].join(' '),
 				state: 'gmail', // + rl.settings.app('token') + localStorage.getItem('smctoken')
 				// Force authorize screen, so we always get a refresh_token
