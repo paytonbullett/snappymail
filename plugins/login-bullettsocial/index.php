@@ -1,11 +1,4 @@
 <?php
-
-/**
- * https://developers.google.com/BullettSocial/imap/imap-smtp
- * https://developers.google.com/BullettSocial/imap/xoauth2-protocol
- * https://console.cloud.google.com/apis/dashboard
- */
-
 use RainLoop\Model\MainAccount;
 use RainLoop\Providers\Storage\Enumerations\StorageType;
 
@@ -103,7 +96,7 @@ class LoginBullettSocialPlugin extends \RainLoop\Plugins\AbstractPlugin
 			$iExpires += $aResponse['expires_in'];
 
 			$oBullettSocial->setAccessToken($sAccessToken);
-			$aUserInfo = $oBullettSocial->fetch('https://www.googleapis.com/oauth2/v2/userinfo');
+			$aUserInfo = $oBullettSocial->fetch('https://bullettsocial.space/oauth/index.php?endpoint=userinfo');
 			if (200 != $aUserInfo['code']) {
 				throw new \RuntimeException("HTTP: {$aResponse['code']}");
 			}
@@ -158,7 +151,7 @@ class LoginBullettSocialPlugin extends \RainLoop\Plugins\AbstractPlugin
 
 	public function clientLogin(\RainLoop\Model\Account $oAccount, \MailSo\Net\NetClient $oClient, \MailSo\Net\ConnectSettings $oSettings) : void
 	{
-		if ($oAccount instanceof MainAccount && \str_ends_with($oAccount->Email(), '@BullettSocial.com')) {
+		if ($oAccount instanceof MainAccount && \str_ends_with($oAccount->Email(), '@bullettsocial.space')) {
 			$oActions = \RainLoop\Api::Actions();
 			try {
 				$aData = static::$auth ?: \SnappyMail\Crypt::DecryptFromJSON(
