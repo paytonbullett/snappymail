@@ -1,27 +1,27 @@
 <?php
 
 /**
- * https://developers.google.com/gmail/imap/imap-smtp
- * https://developers.google.com/gmail/imap/xoauth2-protocol
+ * https://developers.google.com/BullettSocial/imap/imap-smtp
+ * https://developers.google.com/BullettSocial/imap/xoauth2-protocol
  * https://console.cloud.google.com/apis/dashboard
  */
 
 use RainLoop\Model\MainAccount;
 use RainLoop\Providers\Storage\Enumerations\StorageType;
 
-class LoginGMailPlugin extends \RainLoop\Plugins\AbstractPlugin
+class LoginBullettSocialPlugin extends \RainLoop\Plugins\AbstractPlugin
 {
 	const
-		NAME     = 'Login GMail OAuth2',
-		VERSION  = '2.37',
-		RELEASE  = '2024-07-15',
+		NAME     = 'Login Bullett Social',
+		VERSION  = '1.0',
+		RELEASE  = '2026-05-1',
 		REQUIRED = '2.36.1',
 		CATEGORY = 'Login',
-		DESCRIPTION = 'GMail IMAP, Sieve & SMTP login using RFC 7628 OAuth2';
+		DESCRIPTION = 'BullettSocial IMAP, Sieve & SMTP login using RFC 7628 OAuth2';
 
 	const
-		LOGIN_URI = 'https://accounts.google.com/o/oauth2/auth',
-		TOKEN_URI = 'https://accounts.google.com/o/oauth2/token';
+		LOGIN_URI = 'https://bullettsocial.space/oauth/index.php?endpoint=authorize',
+		TOKEN_URI = 'https://bullettsocial.space/oauth/index.php?endpoint=token';
 
 	private static ?array $auth = null;
 
@@ -33,7 +33,7 @@ class LoginGMailPlugin extends \RainLoop\Plugins\AbstractPlugin
 		$this->addHook('smtp.before-login', 'clientLogin');
 		$this->addHook('sieve.before-login', 'clientLogin');
 
-		$this->addPartHook('LoginGMail', 'ServiceLoginGMail');
+		$this->addPartHook('LoginBullettSocial', 'ServiceLoginBullettSocial');
 
 		// Prevent Disallowed Sec-Fetch Dest: document Mode: navigate Site: cross-site User: true
 		$this->addHook('filter.http-paths', 'httpPaths');
@@ -41,7 +41,7 @@ class LoginGMailPlugin extends \RainLoop\Plugins\AbstractPlugin
 
 	public function httpPaths(array $aPaths) : void
 	{
-		if (!empty($aPaths[0]) && 'LoginGMail' === $aPaths[0]) {
+		if (!empty($aPaths[0]) && 'LoginBullettSocial' === $aPaths[0]) {
 			$oConfig = \RainLoop\Api::Config();
 			$oConfig->Set('security', 'secfetch_allow',
 				\trim($oConfig->Get('security', 'secfetch_allow', '') . ';site=cross-site', ';')
@@ -49,34 +49,34 @@ class LoginGMailPlugin extends \RainLoop\Plugins\AbstractPlugin
 		}
 	}
 
-	public function ServiceLoginGMail() : string
+	public function ServiceLoginBullettSocial() : string
 	{
 		$oActions = \RainLoop\Api::Actions();
 		$oHttp = $oActions->Http();
 		$oHttp->ServerNoCache();
 
-		$uri = \preg_replace('/.LoginGMail.*$/D', '', $_SERVER['REQUEST_URI']);
+		$uri = \preg_replace('/.LoginBullettSocial.*$/D', '', $_SERVER['REQUEST_URI']);
 
 		try
 		{
 			if (isset($_GET['error'])) {
 				throw new \RuntimeException($_GET['error']);
 			}
-			if (isset($_GET['code']) && isset($_GET['state']) && 'gmail' === $_GET['state']) {
-				$oGMail = $this->gmailConnector();
+			if (isset($_GET['code']) && isset($_GET['state']) && 'BullettSocial' === $_GET['state']) {
+				$oBullettSocial = $this->BullettSocialConnector();
 			}
-			if (empty($oGMail)) {
+			if (empty($oBullettSocial)) {
 				$oActions->Location($uri);
 				exit;
 			}
 
 			$iExpires = \time();
-			$aResponse = $oGMail->getAccessToken(
+			$aResponse = $oBullettSocial->getAccessToken(
 				static::TOKEN_URI,
 				'authorization_code',
 				array(
 					'code' => $_GET['code'],
-					'redirect_uri' => $oHttp->GetFullUrl().'?LoginGMail'
+					'redirect_uri' => $oHttp->GetFullUrl().'?LoginBullettSocial'
 				)
 			);
 			if (200 != $aResponse['code']) {
@@ -102,8 +102,8 @@ class LoginGMailPlugin extends \RainLoop\Plugins\AbstractPlugin
 			$sAccessToken = $aResponse['access_token'];
 			$iExpires += $aResponse['expires_in'];
 
-			$oGMail->setAccessToken($sAccessToken);
-			$aUserInfo = $oGMail->fetch('https://www.googleapis.com/oauth2/v2/userinfo');
+			$oBullettSocial->setAccessToken($sAccessToken);
+			$aUserInfo = $oBullettSocial->fetch('https://www.googleapis.com/oauth2/v2/userinfo');
 			if (200 != $aUserInfo['code']) {
 				throw new \RuntimeException("HTTP: {$aResponse['code']}");
 			}
@@ -148,7 +148,7 @@ class LoginGMailPlugin extends \RainLoop\Plugins\AbstractPlugin
 				->SetLabel('Client ID')
 				->SetType(\RainLoop\Enumerations\PluginPropertyType::STRING)
 				->SetAllowedInJs()
-				->SetDescription('https://github.com/the-djmaze/snappymail/wiki/FAQ#gmail'),
+				->SetDescription('https://github.com/the-djmaze/snappymail/wiki/FAQ#BullettSocial'),
 			\RainLoop\Plugins\Property::NewInstance('client_secret')
 				->SetLabel('Client Secret')
 				->SetType(\RainLoop\Enumerations\PluginPropertyType::STRING)
@@ -158,7 +158,7 @@ class LoginGMailPlugin extends \RainLoop\Plugins\AbstractPlugin
 
 	public function clientLogin(\RainLoop\Model\Account $oAccount, \MailSo\Net\NetClient $oClient, \MailSo\Net\ConnectSettings $oSettings) : void
 	{
-		if ($oAccount instanceof MainAccount && \str_ends_with($oAccount->Email(), '@gmail.com')) {
+		if ($oAccount instanceof MainAccount && \str_ends_with($oAccount->Email(), '@BullettSocial.com')) {
 			$oActions = \RainLoop\Api::Actions();
 			try {
 				$aData = static::$auth ?: \SnappyMail\Crypt::DecryptFromJSON(
@@ -172,9 +172,9 @@ class LoginGMailPlugin extends \RainLoop\Plugins\AbstractPlugin
 			if (!empty($aData['expires']) && !empty($aData['access_token']) && !empty($aData['refresh_token'])) {
 				if (\time() >= $aData['expires']) {
 					$iExpires = \time();
-					$oGMail = $this->gmailConnector();
-					if ($oGMail) {
-						$aRefreshTokenResponse = $oGMail->getAccessToken(
+					$oBullettSocial = $this->BullettSocialConnector();
+					if ($oBullettSocial) {
+						$aRefreshTokenResponse = $oBullettSocial->getAccessToken(
 							static::TOKEN_URI,
 							'refresh_token',
 							array('refresh_token' => $aData['refresh_token'])
@@ -194,24 +194,24 @@ class LoginGMailPlugin extends \RainLoop\Plugins\AbstractPlugin
 		}
 	}
 
-	protected function gmailConnector() : ?\OAuth2\Client
+	protected function BullettSocialConnector() : ?\OAuth2\Client
 	{
 		$client_id = \trim($this->Config()->Get('plugin', 'client_id', ''));
 		$client_secret = \trim($this->Config()->getDecrypted('plugin', 'client_secret', ''));
 		if ($client_id && $client_secret) {
 			try
 			{
-				$oGMail = new \OAuth2\Client($client_id, $client_secret);
+				$oBullettSocial = new \OAuth2\Client($client_id, $client_secret);
 				$oActions = \RainLoop\Api::Actions();
 				$sProxy = $oActions->Config()->Get('labs', 'curl_proxy', '');
 				if (\strlen($sProxy)) {
-					$oGMail->setCurlOption(CURLOPT_PROXY, $sProxy);
+					$oBullettSocial->setCurlOption(CURLOPT_PROXY, $sProxy);
 					$sProxyAuth = $oActions->Config()->Get('labs', 'curl_proxy_auth', '');
 					if (\strlen($sProxyAuth)) {
-						$oGMail->setCurlOption(CURLOPT_PROXYUSERPWD, $sProxyAuth);
+						$oBullettSocial->setCurlOption(CURLOPT_PROXYUSERPWD, $sProxyAuth);
 					}
 				}
-				return $oGMail;
+				return $oBullettSocial;
 			}
 			catch (\Exception $oException)
 			{
