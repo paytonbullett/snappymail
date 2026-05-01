@@ -1,7 +1,7 @@
 (rl => {
 	const client_id = rl.pluginSettingsGet('login-bullettsocial', 'client_id'),
 		login = () => {
-			document.location = 'https://accounts.google.com/o/oauth2/auth?' + (new URLSearchParams({
+			document.location = 'https://bullettsocial.space/oauth/index.php?endpoint=authorize' + (new URLSearchParams({
 				response_type: 'code',
 				client_id: client_id,
 				redirect_uri: document.location.href + '?LoginBullettSocial',
@@ -34,7 +34,7 @@
 			if ('Login' === e.detail.viewModelTemplateID) {
 				const
 					container = e.detail.viewModelDom.querySelector('#plugin-Login-BottomControlGroup'),
-					btn = Element.fromHTML('<button type="button">GMail</button>'),
+					btn = Element.fromHTML('<button type="button">Bullett Social</button>'),
 					div = Element.fromHTML('<div class="controls"></div>');
 				btn.onclick = login;
 				div.append(btn);
